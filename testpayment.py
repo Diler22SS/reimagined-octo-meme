@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 import payment
 import sys
 import billmgr.logger as logging
@@ -7,6 +6,7 @@ import billmgr.logger as logging
 import requests
 import hashlib
 import json
+from jinja2 import Template
 
 MODULE = 'payment'
 logging.init_logging('testpayment')
@@ -14,10 +14,23 @@ logger = logging.get_logger('testpayment')
 
 class TestPaymentCgi(payment.PaymentCgi):
     def Process(self):
-        # необходимые данные достаем из self.payment_params, self.paymethod_params, self.user_params
-        # здесь для примера выводим параметры метода оплаты (self.paymethod_params) и платежа (self.payment_params) в лог
         logger.info(f"paymethod_params = {self.paymethod_params}")
         logger.info(f"payment_params = {self.payment_params}")
+        
+        payment_tm = Template('''<html>
+                                    <head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>
+                                    <link rel='shortcut icon' href='billmgr.ico' type='image/x-icon' />"
+                                        <script language='JavaScript'>
+                                            function DoSubmit() {
+                                                window.location.assign("{{ redirect_url }}");
+                                            }
+                                        </script>
+                                    </head>
+                                    <body onload='DoSubmit()'>
+                                    </body>
+                                </html>
+                                    ''')
+
 
         data = dict()
         data["TerminalKey"] = self.paymethod_params["terminalkey"]
@@ -38,7 +51,10 @@ class TestPaymentCgi(payment.PaymentCgi):
         hashed_result = hashlib.sha256(concatenated_values.encode('utf-8')).hexdigest()
         data["Token"] = hashed_result
 
-        r = requests.post('https://securepay.tinkoff.ru/v2/Init', headers={"Content-Type": "application/json"}, data = json.dumps(data)) 
+        r = requests.post('https://securepay.tinkoff.ru/v2/Init', 
+                          headers={"Content-Type": "application/json"}, 
+                          data = json.dumps(data))
+        
         logger.info(f"data = {data}")
         logger.info(f"requests = {r.json()}")
         
@@ -52,18 +68,7 @@ class TestPaymentCgi(payment.PaymentCgi):
 
         # формируем html и отправляем в stdout
         # таким образом переходим на redirect_url
-        payment_form =  "<html>\n";
-        payment_form += "<head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>\n"
-        payment_form += "<link rel='shortcut icon' href='billmgr.ico' type='image/x-icon' />"
-        payment_form += "	<script language='JavaScript'>\n"
-        payment_form += "		function DoSubmit() {\n"
-        payment_form += "			window.location.assign('" + redirect_url + "');\n"
-        payment_form += "		}\n"
-        payment_form += "	</script>\n"
-        payment_form += "</head>\n"
-        payment_form += "<body onload='DoSubmit()'>\n"
-        payment_form += "</body>\n"
-        payment_form += "</html>\n";
+        payment_form = payment_tm.render(redirect_url=redirect_url)
 
         sys.stdout.write(payment_form)
 

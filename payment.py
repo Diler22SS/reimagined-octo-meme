@@ -151,16 +151,10 @@ class PaymentModule(ABC):
     # Абстрактные методы CheckPay и PM_Validate необходимо переопределить в своей реализации
     # см пример реализации в pmtestpayment.py
 
-
     @abstractmethod
     def CheckPay(self):
         pass
 
-    # вызывается для проверки введенных в настройках метода оплаты значений
-    # реализация --command pmvalidate
-    # принимается xml с веденными на форме значениями
-    # если есть некорректные значения, то бросаем исключение billmgr.exception.XmlException
-    # если все значение валидны, то ничего не возвращаем, исключений не бросаем
     @abstractmethod
     def PM_Validate(self, xml):
         pass
