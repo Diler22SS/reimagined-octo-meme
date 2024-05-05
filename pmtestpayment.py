@@ -23,24 +23,36 @@ class TestPaymentModule(payment.PaymentModule):
 
         self.params[payment.PAYMENT_PARAM_PAYMENT_SCRIPT] = "/mancgi/testpayment"
 
-
+    # вызывается для проверки введенных в настройках метода оплаты значений
+    # реализация --command pmvalidate
+    # принимается xml с веденными на форме значениями
+    # если есть некорректные значения, то бросаем исключение billmgr.exception.XmlException
+    # если все значение валидны, то ничего не возвращаем, исключений не бросаем
+    
     # в тестовом примере валидация проходит успешно, если
     # Идентификатор терминала = rick, пароль терминала = morty
     def PM_Validate(self, xml : ET.ElementTree):
         logger.info("run pmvalidate")
-
-        # мы всегда можем вывести xml в лог, чтобы изучить, что приходит :)
         logger.info(f"xml input: {ET.tostring(xml.getroot(), encoding='unicode')}")
 
         terminalkey_node = xml.find('./terminalkey')
         terminalpsw_node = xml.find('./terminalpsw')
+        minamount_node = xml.find('./paymethod/minamount')
         terminalkey = terminalkey_node.text if terminalkey_node is not None else ''
         terminalpsw = terminalpsw_node.text if terminalpsw_node is not None else ''
+        
+        minamount = terminalpsw_node.text if terminalpsw_node is not None else '0'
+        if float(minamount_node.text) <= 10:
+            raise billmgr.exception.XmlException('wrong_terminal_info')
+             
 
-        # if terminalkey != 'rick' or terminalpsw != 'morty':
-        #     raise billmgr.exception.XmlException('wrong_terminal_info')
 
-
+    # проверить оплаченные платежи
+    # реализация --command checkpay
+    # здесь делаем запрос в БД, получаем список платежей в статусе "оплачивается"
+    # идем в платежку и проверяем прошли ли платежи
+    # если платеж оплачен, выставляем соответствующий статус c помощью функции set_paid
+    
     # в тестовом примере получаем необходимые платежи
     # и переводим их все в статус 'оплачен'
     def CheckPay(self):

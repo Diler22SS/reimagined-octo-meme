@@ -151,11 +151,7 @@ class PaymentModule(ABC):
     # Абстрактные методы CheckPay и PM_Validate необходимо переопределить в своей реализации
     # см пример реализации в pmtestpayment.py
 
-    # проверить оплаченные платежи
-    # реализация --command checkpay
-    # здесь делаем запрос в БД, получаем список платежей в статусе "оплачивается"
-    # идем в платежку и проверяем прошли ли платежи
-    # если платеж оплачен, выставляем соответствующий статус c помощью функции set_paid
+
     @abstractmethod
     def CheckPay(self):
         pass
@@ -192,10 +188,10 @@ class PaymentModule(ABC):
             # лайтовый парсинг аргументов командной строки
             # ожидаем --command <наименование команды>
             if len(sys.argv) < 3:
-                raise billmgr.exception.XmlException("invalid_arguments")
+                raise billmgr.exception.XmlException("invalid_arguments1")
 
             if sys.argv[1] != "--command":
-                raise Exception("invalid_arguments")
+                raise Exception("invalid_arguments2")
 
             command = sys.argv[2]
 
