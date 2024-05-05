@@ -2,3 +2,4 @@ __pycache__/
 billmgr/
 .venv
 .git
+test.py

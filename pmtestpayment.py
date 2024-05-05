@@ -29,8 +29,6 @@ class TestPaymentModule(payment.PaymentModule):
     # если есть некорректные значения, то бросаем исключение billmgr.exception.XmlException
     # если все значение валидны, то ничего не возвращаем, исключений не бросаем
     
-    # в тестовом примере валидация проходит успешно, если
-    # Идентификатор терминала = rick, пароль терминала = morty
     def PM_Validate(self, xml : ET.ElementTree):
         logger.info("run pmvalidate")
         logger.info(f"xml input: {ET.tostring(xml.getroot(), encoding='unicode')}")
@@ -40,12 +38,11 @@ class TestPaymentModule(payment.PaymentModule):
         minamount_node = xml.find('./paymethod/minamount')
         terminalkey = terminalkey_node.text if terminalkey_node is not None else ''
         terminalpsw = terminalpsw_node.text if terminalpsw_node is not None else ''
-        
         minamount = terminalpsw_node.text if terminalpsw_node is not None else '0'
+        
+        # Сумма платежа должна быть не меньше 10 руб.
         if float(minamount_node.text) <= 10:
             raise billmgr.exception.XmlException('wrong_terminal_info')
-             
-
 
     # проверить оплаченные платежи
     # реализация --command checkpay

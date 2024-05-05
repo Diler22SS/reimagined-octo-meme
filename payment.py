@@ -8,6 +8,7 @@ import billmgr.exception
 from enum import Enum
 import sys
 import xml.etree.ElementTree as ET
+from jinja2 import Template
 
 MODULE = 'payment'
 
@@ -27,7 +28,6 @@ class PaymentStatus(Enum):
     FRAUD = 7
     CANCELED = 9
 
-
 # перевести платеж в статус "оплачивается"
 def set_in_pay(payment_id: str, info: str, externalid: str):
     '''
@@ -37,16 +37,13 @@ def set_in_pay(payment_id: str, info: str, externalid: str):
     '''
     MgrctlXml('payment.setinpay', elid=payment_id, info=info, externalid=externalid)
 
-
 # перевести платеж в статус "мошеннический"
 def set_fraud(payment_id: str, info: str, externalid: str):
     MgrctlXml('payment.setfraud', elid=payment_id, info=info, externalid=externalid)
 
-
 # перевести платеж в статус "оплачен"
 def set_paid(payment_id: str, info: str, externalid: str):
     MgrctlXml('payment.setpaid', elid=payment_id, info=info, externalid=externalid)
-
 
 # перевести платеж в статус "отменен"
 def set_canceled(payment_id: str, info: str, externalid: str):
@@ -73,6 +70,23 @@ class PaymentCgi(ABC):
         self.user_params = {}      # параметры пользователя
 
         self.lang = None           # язык используемый у клиента
+        
+        # Создает шаблон HTML с использованием синтаксиса Jinja2. Шаблон включает в себя
+        # простую структуру HTML с функцией JavaScript, которая перенаправляет пользователя на указанный URL-адрес 
+        # при загрузке страницы.
+        self.payment_tm = Template('''<html>
+                            <head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>
+                            <link rel='shortcut icon' href='billmgr.ico' type='image/x-icon' />"
+                                <script language='JavaScript'>
+                                    function DoSubmit() {
+                                        window.location.assign("{{ redirect_url }}");
+                                    }
+                                </script>
+                            </head>
+                            <body onload='DoSubmit()'>
+                            </body>
+                        </html>
+                            ''')
 
         # пока поддерживаем только http метод GET
         if os.environ['REQUEST_METHOD'] != 'GET':
@@ -141,15 +155,14 @@ FEATURE_REDIRECT = "redirect"               # нужен ли переход в 
 FEATURE_CHECKPAY = "checkpay"               # проверка статуса платежа по крону
 FEATURE_NOT_PROFILE = "notneedprofile"      # оплата без плательщика (позволит зачислить платеж без создания плательщика)
 FEATURE_PMVALIDATE = "pmvalidate"           # проверка введённых данных на форме создания платежной системы
-FEATURE_PMUSERCREATE = "pmusercreate"       # для ссылки на регистрацию в платежке
+# FEATURE_PMUSERCREATE = "pmusercreate"       # для ссылки на регистрацию в платежке
 
 # параметры платежного модуля
 PAYMENT_PARAM_PAYMENT_SCRIPT = "payment_script" # mancgi/<наименование cgi скрипта>
 
 
 class PaymentModule(ABC):
-    # Абстрактные методы CheckPay и PM_Validate необходимо переопределить в своей реализации
-    # см пример реализации в pmtestpayment.py
+    # Абстрактные методы CheckPay и PM_Validate, см пример реализации в pmtestpayment.py
 
     @abstractmethod
     def CheckPay(self):
