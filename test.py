@@ -1,40 +1,27 @@
-import hashlib
-a = {
-    "TerminalKey": "TinkoffBankTest",
-"PaymentId": 13660,
-"IP": "192.168.0.52"
-}
-b = "Token 7241ac8307f349afb7bb9dda760717721bbb45950b97c67289f23d8c69cc7b96"
-[{"TerminalKey": "MerchantTerminalKey"},{"Amount": "19200"},{"OrderId": "21090"},{"Description": "Подарочная карта на 1000 рублей"}]
-'0024a00af7c350a3a67ca168ce06502aa72772456662e38696d48b56ee9c97d9'
-def gen_token(data, secretkey):
-    secret_data = dict()
-    for key, value in data.items():
-        if type(value) in [int, float, str, bool]:
-            secret_data[key] = value
+import billmgr.db
+import billmgr.exception
+
+import billmgr.logger as logging
+
+import xml.etree.ElementTree as ET
+
+
+string = '<?xml version="1.0" encoding="UTF-8"?>\n<doc><terminalkey private="yes">TinkoffBankTest</terminalkey><terminalpsw private="yes">TinkoffBankTest</terminalpsw></doc>\n'
+a = ET.fromstring(string)
+
+print(a.find('terminalkey').text)
+    # # Получение состояния платежа от платежной системы
+    # data_GetState = dict()
+    # data_GetState['TerminalKey'] = p["terminalkey"]
+    # data_GetState['PaymentId'] = p["PaymentId"]
+    # data_GetState['Token'] = payment.gen_token(data_GetState, p["terminalpsw"])
+    # logger.info(f"data_GetState = {data_GetState}")
     
-    secret_data.update({"Password": secretkey})
-    print(secret_data)
-    secret_data = dict(sorted(secret_data.items()))
-    print(secret_data)
-    concatenated_values = ''.join(list(secret_data.values()))
-    print('secret_data.values()', ''.join(list(secret_data.values())))
-    print('concatenated_values', concatenated_values)
-    token = hashlib.sha256(concatenated_values.encode('utf-8')).hexdigest()
-    print(token)
-    return token
-        
-data_Init = dict()
-# data_Init["TerminalKey"] = "TinkoffBankTest"
-# data_Init["PaymentId"] = '13660'
-# data_Init["DATA"] = {"OperationInitiatorType":0}
-# data_Init["IP"] = "192.168.0.52"
-# data_Init["Token"] = gen_token(data_Init, "TinkoffBankTest")
-
-data_Init["TerminalKey"] = "MerchantTerminalKey"
-data_Init["Amount"] = "19200"
-data_Init["OrderId"] = "21090"
-data_Init["Description"] = "Подарочная карта на 1000 рублей"
-data_Init["Token"] = gen_token(data_Init, "usaf8fw8fsw21g")
-
-print(data_Init)
+    # r_GetState = requests.post('https://securepay.tinkoff.ru/v2/GetState', 
+    #             headers={"Content-Type": "application/json"}, 
+    #             data = json.dumps(data_GetState))
+    # logger.info(f"r_GetState = {r_GetState.json()}")
+    
+    
+    # logger.info(f"change status for payment {p['id']}")
+    # payment.set_paid(p['id'], '', f"external_{p['id']}")

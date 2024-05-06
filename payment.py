@@ -8,7 +8,8 @@ import billmgr.exception
 from enum import Enum
 import sys
 import xml.etree.ElementTree as ET
-from jinja2 import Template
+
+import hashlib
 
 MODULE = 'payment'
 
@@ -18,6 +19,17 @@ def parse_cookies(rawdata):
     cookie.load(rawdata)
     return {k: v.value for k, v in cookie.items()}
 
+#генерирует токен с использованием алгоритма хеширования SHA-256
+def gen_token(data, secretkey):
+    secret_data = dict()
+    for key, value in data.items():
+        if type(value) in [int, float, str, bool]:
+            secret_data[key] = value
+    secret_data.update({"Password": secretkey})
+    secret_data = dict(sorted(secret_data.items()))
+    concatenated_values = ''.join(list(secret_data.values()))
+    token = hashlib.sha256(concatenated_values.encode('utf-8')).hexdigest()
+    return token
 
 # cтатусы платежей в том виде, в котором они хранятся в БД
 # см. https://docs.ispsystem.ru/bc/razrabotchiku/struktura-bazy-dannyh#id-Структурабазыданных-payment
@@ -70,23 +82,6 @@ class PaymentCgi(ABC):
         self.user_params = {}      # параметры пользователя
 
         self.lang = None           # язык используемый у клиента
-        
-        # Создает шаблон HTML с использованием синтаксиса Jinja2. Шаблон включает в себя
-        # простую структуру HTML с функцией JavaScript, которая перенаправляет пользователя на указанный URL-адрес 
-        # при загрузке страницы.
-        self.payment_tm = Template('''<html>
-                            <head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>
-                            <link rel='shortcut icon' href='billmgr.ico' type='image/x-icon' />"
-                                <script language='JavaScript'>
-                                    function DoSubmit() {
-                                        window.location.assign("{{ redirect_url }}");
-                                    }
-                                </script>
-                            </head>
-                            <body onload='DoSubmit()'>
-                            </body>
-                        </html>
-                            ''')
 
         # пока поддерживаем только http метод GET
         if os.environ['REQUEST_METHOD'] != 'GET':

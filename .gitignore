@@ -3,3 +3,4 @@ billmgr/
 .venv
 .git
 test.py
+.vscode
